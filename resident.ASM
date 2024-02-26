@@ -29,10 +29,10 @@ ADD_2		macro t:REQ								; macro that increments a number by 2
 		endm
 
 
-VIDEO_PTR 	equ 0b800h								; Contains video memory address
+VIDEO_PTR    equ 0b800h									; Contains video memory address
 
-START_SYMBOL 	equ 09d									; '8'
-STOP_SYMBOL 	equ 10d									; '9'
+START_SYMBOL equ 09d									; '8'
+STOP_SYMBOL  equ 10d									; '9'
 
 X0 equ 10d			                  					; Initial x-coordinate of the left corner of the frame
 Y0 equ 05d			                  					; Initial y-coordinate of the left corner of the frame
@@ -40,11 +40,11 @@ Y0 equ 05d			                  					; Initial y-coordinate of the left corner of
 WIDTH_FRAME  equ 09d                							; Frame width
 HEIGHT_FRAME equ 14d                							; Frame height
 
-COLOR equ 0Ch                       							; Frame color
+COLOR        equ 0Ch                       						; Frame color
 
 WIDTH_WINDOW equ 80d									; Window width
 
-COUNT_REG equ 12d									; Number of registers
+COUNT_REG    equ 12d									; Number of registers
 
 
 Start:
@@ -206,7 +206,7 @@ FrameInterruptFunc	proc
 
 
 TimerInterruptFunc	proc
-		cmp reg_flag, 1								; push all registersя
+		cmp reg_flag, 1								; push all registers
 		jne @@dont_draw_reg
 
 		PUSH_ALL_REG								; push all registers
