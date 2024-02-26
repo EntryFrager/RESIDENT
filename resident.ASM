@@ -98,12 +98,12 @@ InitInterrupt	proc
 		mov bx, 4 * 09h								; 09h = interrupt addres
 											; 4 because offset = 2 byte and segment = 2 byte
 
+		push cs
+		pop ax									; get a segment of our code
+
 		cli									; disable interrupts
 
 		mov es:[bx], offset FrameInterruptFunc					; new interrupt address (offset)
-
-		push cs
-		pop ax									; get a segment of our code
 
 		mov es:[bx + 2], ax							; write the segment after the offset (offset = 2 byte)
 
@@ -123,12 +123,12 @@ InitInterrupt	proc
 		mov bx, 4 * 08h								; 09h = interrupt addres
 											; 4 because offset = 2 byte and segment = 2 byte
 
+		push cs									; get a segment of our code
+		pop ax
+
 		cli									; disable interrupts
 
 		mov es:[bx], offset TimerInterruptFunc					; new interrupt address (offset)
-
-		push cs									; get a segment of our code
-		pop ax
 
 		mov es:[bx + 2], ax							; write the segment after the offset (offset = 2 byte)
 
