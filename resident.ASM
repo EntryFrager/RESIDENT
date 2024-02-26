@@ -53,6 +53,16 @@ Start:
 
 Main	proc
 		Call InitInterrupt							; call a function that replaces the interrupt
+
+;;-----------------Terminate and stay resident--------------------------
+
+		mov dx, offset EndOfProgramm						; get the address of the end of the program
+		shr dx, 4								; 2^4 = 16 = paragraph length
+		inc dx									; + 1, beacuse so that it's definitely enough
+
+		mov ax, 3100h								; terminate and stay resident
+		int 21h
+
 		ret
 		endp
 
@@ -124,15 +134,6 @@ InitInterrupt	proc
 
 		sti									; enable interrupts
 
-;;-----------------Terminate and stay resident--------------------------
-
-		mov dx, offset EndOfProgramm						; get the address of the end of the program
-		shr dx, 4								; 2^4 = 16 = paragraph length
-		inc dx									; + 1, beacuse so that it's definitely enough
-
-		mov ax, 3100h								; terminate and stay resident
-		int 21h
-
 		ret
 		endp
 
@@ -149,7 +150,7 @@ InitInterrupt	proc
 
 
 FrameInterruptFunc	proc
-		SAVE_REG_PUSH								; stored values ​​of all registers
+		push ax
 
 		in al, 60h								; get the scan code of the entered character
 		
@@ -180,13 +181,13 @@ FrameInterruptFunc	proc
 		mov al, 20h								; 20h = 001 = End Of Interrupt
 		out 20h, al								
 
-		SAVE_REG_POP								; return saved register values
+		pop ax
 
 		iret									; returns IP, CS and flags from the stack
 
 	@@not_stop_symbol:
 
-		SAVE_REG_POP
+		pop ax
 
 		db 0EAh									; long jump Old09Seg:[Old09Ofs]
 	Old09Ofs dw 0									; give control to the system interrupt
@@ -217,7 +218,7 @@ TimerInterruptFunc	proc
 		ADD_2 sp
 
 	@@dont_draw_reg:
-		db 0EAh									; long jump Old09Seg:[Old09Ofs]
+		db 0EAh									; long jump Old08Seg:[Old08Ofs]
 	Old08Ofs dw 0									; give control to the system interrupt
 	Old08Seg dw 0
 
@@ -271,7 +272,7 @@ InitFrame	proc
 ; 	HEIGHT_FRAME - frame height
 ; 	WIDTH_WINDOW - window width
 ; Assum:
-;	EX = 0b800h
+;	ES = 0b800h
 ; Destr: 
 ; 	BX
 ; 	CX
@@ -315,7 +316,7 @@ DrawFrame	proc
 ; 	AL - symbol
 ; 	WIDTH_FRAME - frame width
 ; Assum:	
-;	EX = 0b800h
+;	ES = 0b800h
 ; Destr: 
 ;	AX
 ; 	BX
@@ -379,7 +380,7 @@ MoveLine	proc
 ;	DI - video memory offset
 ;	WIDTH_WINDOW - window width
 ; Assum:	
-;	EX = 0b800h
+;	ES = 0b800h
 ; Destr:
 ;	BX
 ;	CX
@@ -411,11 +412,12 @@ DrawRegisterLine	proc
 ; Entry:
 ;	BX - address to register names written without a space
 ;	CS - code segment
+;	DI - video memory offset
 ; Info:
 ;	AL - output character
 ;	CX - register name length
 ; Assum:	
-;	EX = 0b800h
+;	ES = 0b800h
 ; Destr:
 ;	AL
 ;	BX
@@ -489,8 +491,11 @@ DrawRegisterValue	proc
 ; Function that prints the value of one register
 ; Entry:
 ;	DX - stores the value of the output register
+;	DI - video memory offset
 ; Info:
 ;	AH - stores the color value
+; Assum:	
+;	ES = 0b800h
 ; Destr:
 ;	AH
 ;	CX
@@ -529,9 +534,12 @@ DrawRegNumber	proc
 ; Function that prints a hexadecimal number symbol
 ; Entry:
 ;	CX - output number
+;	DI - video memory offset
 ; Info:
 ;	AL - output character
 ;	BX - address per line with text representations of hexadecimal symbols
+; Assum:	
+;	ES = 0b800h
 ; Destr:
 ;	BX
 ;;--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------

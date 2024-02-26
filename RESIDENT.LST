@@ -1,4 +1,4 @@
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 1
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 1
 resident.asm
 
 
@@ -60,7 +60,7 @@ resident.asm
      55
      56	      =0050		     WIDTH_WINDOW equ 80d								     ;	    +
      57				     Window width
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 2
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 2
 resident.asm
 
 
@@ -75,759 +75,756 @@ resident.asm
      65
      66
      67	0103			     Main    proc
-     68	0103  E8 0001				     Call InitInterrupt							     ; call +
+     68	0103  E8 000D				     Call InitInterrupt							     ; call +
      69				     a function	that replaces the interrupt
-     70	0106  C3				     ret
-     71	0107					     endp
+     70
+     71				     ;;-----------------Terminate and stay resident--------------------------
      72
-     73
-     74				     ;;----------------------------------------------------------------------------------------------
-     75				     ------------------------------------------------------------------------------------------------
-     76				     ----------
-     77				     ; Function	that replaces the system interrupt
-     78				     ; Info:
-     79				     ;	     Old09Ofs -	stores system function offset 09h
-     80				     ;	     Old09Seg -	stores system function segment 09h
-     81				     ;	     Old08Ofs -	stores system function offset 09h
-     82				     ;	     Old08Seg -	stores system function segment 08h
-     83				     ; Destr:
-     84				     ;	     AX
-     85				     ;	     BX
-     86				     ;	     DX
-     87				     ;	     ES
+     73	0106  BA 0032r				     mov dx, offset EndOfProgramm					     ; get  +
+     74				     the address of the	end of the program
+     75	0109  C1 EA 04				     shr dx, 4								     ; 2^4 =+
+     76				     16	= paragraph length
+     77	010C  42				     inc dx								     ; + 1, +
+     78				     beacuse so	that it's definitely enough
+     79
+     80	010D  B8 3100				     mov ax, 3100h							     ;	    +
+     81				     terminate and stay	resident
+     82	0110  CD 21				     int 21h
+     83
+     84	0112  C3				     ret
+     85	0113					     endp
+     86
+     87
      88				     ;;----------------------------------------------------------------------------------------------
      89				     ------------------------------------------------------------------------------------------------
      90				     ----------
-     91
-     92
-     93	0107			     InitInterrupt   proc
-     94
-     95				     ;;-----------------------------09-Interrupt-----------------------------
-     96
-     97	0107  B8 3509				     mov ax, 3509h
-     98	010A  CD 21				     int 21h
-     99	010C  89 1E 01A5r			     mov Old09Ofs, bx							     ;
-    100	0110  8C C3				     mov bx, es								     ; save +
-    101				     segment and offset	for old	addres for 09h interrupt
-    102	0112  89 1E 01A7r			     mov Old09Seg, bx							     ;
-    103
-    104	0116  6A 00				     push 0
-    105	0118  07				     pop es								     ; es = +
-    106				     0 - system	interrupt address
-    107
-    108	0119  BB 0024				     mov bx, 4 * 09h							     ; 09h =+
-    109				     interrupt addres
-    110															     ; 4    +
-    111				     because offset = 2	byte and segment = 2 byte
-    112
-    113	011C  FA				     cli								     ;	    +
-    114				     disable interrupts
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 3
+     91				     ; Function	that replaces the system interrupt
+     92				     ; Info:
+     93				     ;	     Old09Ofs -	stores system function offset 09h
+     94				     ;	     Old09Seg -	stores system function segment 09h
+     95				     ;	     Old08Ofs -	stores system function offset 09h
+     96				     ;	     Old08Seg -	stores system function segment 08h
+     97				     ; Destr:
+     98				     ;	     AX
+     99				     ;	     BX
+    100				     ;	     DX
+    101				     ;	     ES
+    102				     ;;----------------------------------------------------------------------------------------------
+    103				     ------------------------------------------------------------------------------------------------
+    104				     ----------
+    105
+    106
+    107	0113			     InitInterrupt   proc
+    108
+    109				     ;;-----------------------------09-Interrupt-----------------------------
+    110
+    111	0113  B8 3509				     mov ax, 3509h
+    112	0116  CD 21				     int 21h
+    113	0118  89 1E 0187r			     mov Old09Ofs, bx							     ;
+    114	011C  8C C3				     mov bx, es								     ; save +
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 3
 resident.asm
 
 
 
-    115
-    116	011D  26: C7 07	0158r			     mov es:[bx], offset FrameInterruptFunc				     ; new  +
-    117				     interrupt address (offset)
-    118
-    119	0122  0E				     push cs
-    120	0123  58				     pop ax								     ; get a+
-    121				     segment of	our code
-    122
-    123	0124  26: 89 47	02			     mov es:[bx	+ 2], ax						     ; write+
-    124				     the segment after the offset (offset = 2 byte)
-    125
-    126	0128  FB				     sti								     ;	    +
-    127				     enable interrupts
-    128
-    129				     ;;-----------------------------08-Interrupt-----------------------------
-    130
-    131	0129  B8 3508				     mov ax, 3508h
-    132	012C  CD 21				     int 21h
-    133	012E  89 1E 01CDr			     mov Old08Ofs, bx							     ;
-    134	0132  8C C3				     mov bx, es								     ; save +
-    135				     segment and offset	for old	addres for 09h interrupt
-    136	0134  89 1E 01CFr			     mov Old08Seg, bx							     ;
-    137
-    138	0138  6A 00				     push 0
-    139	013A  07				     pop es								     ; es = +
-    140				     0 - system	interrupt address
-    141
-    142	013B  BB 0020				     mov bx, 4 * 08h							     ; 09h =+
-    143				     interrupt addres
-    144															     ; 4    +
-    145				     because offset = 2	byte and segment = 2 byte
-    146
-    147	013E  FA				     cli								     ;	    +
-    148				     disable interrupts
-    149
-    150	013F  26: C7 07	01A9r			     mov es:[bx], offset TimerInterruptFunc				     ; new  +
-    151				     interrupt address (offset)
-    152
-    153	0144  0E				     push cs								     ; get a+
-    154				     segment of	our code
-    155	0145  58				     pop ax
-    156
-    157	0146  26: 89 47	02			     mov es:[bx	+ 2], ax						     ; write+
-    158				     the segment after the offset (offset = 2 byte)
-    159
-    160	014A  FB				     sti								     ;	    +
-    161				     enable interrupts
-    162
-    163				     ;;-----------------Terminate and stay resident--------------------------
-    164
-    165	014B  BA 0032r				     mov dx, offset EndOfProgramm					     ; get  +
-    166				     the address of the	end of the program
-    167	014E  C1 EA 04				     shr dx, 4								     ; 2^4 =+
-    168				     16	= paragraph length
-    169	0151  42				     inc dx								     ; + 1, +
-    170				     beacuse so	that it's definitely enough
-    171
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 4
+    115				     segment and offset	for old	addres for 09h interrupt
+    116	011E  89 1E 0189r			     mov Old09Seg, bx							     ;
+    117
+    118	0122  6A 00				     push 0
+    119	0124  07				     pop es								     ; es = +
+    120				     0 - system	interrupt address
+    121
+    122	0125  BB 0024				     mov bx, 4 * 09h							     ; 09h =+
+    123				     interrupt addres
+    124															     ; 4    +
+    125				     because offset = 2	byte and segment = 2 byte
+    126
+    127	0128  FA				     cli								     ;	    +
+    128				     disable interrupts
+    129
+    130	0129  26: C7 07	0158r			     mov es:[bx], offset FrameInterruptFunc				     ; new  +
+    131				     interrupt address (offset)
+    132
+    133	012E  0E				     push cs
+    134	012F  58				     pop ax								     ; get a+
+    135				     segment of	our code
+    136
+    137	0130  26: 89 47	02			     mov es:[bx	+ 2], ax						     ; write+
+    138				     the segment after the offset (offset = 2 byte)
+    139
+    140	0134  FB				     sti								     ;	    +
+    141				     enable interrupts
+    142
+    143				     ;;-----------------------------08-Interrupt-----------------------------
+    144
+    145	0135  B8 3508				     mov ax, 3508h
+    146	0138  CD 21				     int 21h
+    147	013A  89 1E 01AFr			     mov Old08Ofs, bx							     ;
+    148	013E  8C C3				     mov bx, es								     ; save +
+    149				     segment and offset	for old	addres for 09h interrupt
+    150	0140  89 1E 01B1r			     mov Old08Seg, bx							     ;
+    151
+    152	0144  6A 00				     push 0
+    153	0146  07				     pop es								     ; es = +
+    154				     0 - system	interrupt address
+    155
+    156	0147  BB 0020				     mov bx, 4 * 08h							     ; 09h =+
+    157				     interrupt addres
+    158															     ; 4    +
+    159				     because offset = 2	byte and segment = 2 byte
+    160
+    161	014A  FA				     cli								     ;	    +
+    162				     disable interrupts
+    163
+    164	014B  26: C7 07	018Br			     mov es:[bx], offset TimerInterruptFunc				     ; new  +
+    165				     interrupt address (offset)
+    166
+    167	0150  0E				     push cs								     ; get a+
+    168				     segment of	our code
+    169	0151  58				     pop ax
+    170
+    171	0152  26: 89 47	02			     mov es:[bx	+ 2], ax						     ; write+
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 4
 resident.asm
 
 
 
-    172	0152  B8 3100				     mov ax, 3100h							     ;	    +
-    173				     terminate and stay	resident
-    174	0155  CD 21				     int 21h
-    175
-    176	0157  C3				     ret
-    177	0158					     endp
-    178
+    172				     the segment after the offset (offset = 2 byte)
+    173
+    174	0156  FB				     sti								     ;	    +
+    175				     enable interrupts
+    176
+    177	0157  C3				     ret
+    178	0158					     endp
     179
-    180				     ;;----------------------------------------------------------------------------------------------
-    181				     ------------------------------------------------------------------------------------------------
-    182				     ----------
-    183				     ; Our function replacing interrupt	09h
-    184				     ; Info:
-    185				     ;	     reg_flag -	register update	flag
-    186				     ;	     START_SYMBOL - scan code of the starting symbol
-    187				     ;	     STOP_SYMBOL - scan	code of	the stop character to stop register updating
-    188				     ; Destr:
-    189				     ;	     AX
-    190				     ;;----------------------------------------------------------------------------------------------
-    191				     ------------------------------------------------------------------------------------------------
-    192				     ----------
-    193
+    180
+    181				     ;;----------------------------------------------------------------------------------------------
+    182				     ------------------------------------------------------------------------------------------------
+    183				     ----------
+    184				     ; Our function replacing interrupt	09h
+    185				     ; Info:
+    186				     ;	     reg_flag -	register update	flag
+    187				     ;	     START_SYMBOL - scan code of the starting symbol
+    188				     ;	     STOP_SYMBOL - scan	code of	the stop character to stop register updating
+    189				     ; Destr:
+    190				     ;	     AX
+    191				     ;;----------------------------------------------------------------------------------------------
+    192				     ------------------------------------------------------------------------------------------------
+    193				     ----------
     194
-    195	0158			     FrameInterruptFunc	     proc
-    196						     SAVE_REG_PUSH							     ;	    +
-    197				     stored values ​​of all	registers
-1   198	0158  16 06 1E 54 55 57	56+		     push ss es	ds sp bp di si dx cx bx	ax
-    199	      52 51 53 50
-1   200
+    195
+    196	0158			     FrameInterruptFunc	     proc
+    197	0158  50				     push ax
+    198
+    199	0159  E4 60				     in	al, 60h								     ; get  +
+    200				     the scan code of the entered character
     201
-    202	0163  E4 60				     in	al, 60h								     ; get  +
-    203				     the scan code of the entered character
-    204
-    205	0165  3C 09				     cmp al, START_SYMBOL						     ;	    +
-    206				     compare it	with the start character to start drawing the frame
-    207	0167  75 0C				     jne @@not_start_symbol
-    208
-    209	0169  C6 06 0028r 01 90			     mov reg_flag, 1							     ; set  +
-    210				     the register update flag to 1
-    211	016F  E8 005F				     Call InitFrame							     ;	    +
-    212				     Drawing a frame
-    213
-    214	0172  EB 0B 90				     jmp @@status_keyboard
-    215
-    216	0175				     @@not_start_symbol:
-    217
-    218	0175  3C 0A				     cmp al, STOP_SYMBOL						     ;	    +
-    219				     compare the scan code with	the stop symbol
-    220	0177  75 20				     jne @@not_stop_symbol
+    202	015B  3C 09				     cmp al, START_SYMBOL						     ;	    +
+    203				     compare it	with the start character to start drawing the frame
+    204	015D  75 0C				     jne @@not_start_symbol
+    205
+    206	015F  C6 06 0028r 01 90			     mov reg_flag, 1							     ; set  +
+    207				     the register update flag to 1
+    208	0165  E8 004B				     Call InitFrame							     ;	    +
+    209				     Drawing a frame
+    210
+    211	0168  EB 0B 90				     jmp @@status_keyboard
+    212
+    213	016B				     @@not_start_symbol:
+    214
+    215	016B  3C 0A				     cmp al, STOP_SYMBOL						     ;	    +
+    216				     compare the scan code with	the stop symbol
+    217	016D  75 16				     jne @@not_stop_symbol
+    218
+    219	016F  C6 06 0028r 00 90			     mov reg_flag, 0							     ; set  +
+    220				     the register update flag to 0
     221
-    222	0179  C6 06 0028r 00 90			     mov reg_flag, 0							     ; set  +
-    223				     the register update flag to 0
-    224
-    225	017F				     @@status_keyboard:
-    226
-    227	017F  E4 61				     in	al, 61h								     ; get  +
-    228				     status of keyboard
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 5
+    222	0175				     @@status_keyboard:
+    223
+    224	0175  E4 61				     in	al, 61h								     ; get  +
+    225				     status of keyboard
+    226	0177  0C 80				     or	al, 80h								     ; 1000 +
+    227				     0000b (1 -	disable	keyboard)
+    228	0179  E6 61				     out 61h, al							     ; put  +
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 5
 resident.asm
 
 
 
-    229	0181  0C 80				     or	al, 80h								     ; 1000 +
-    230				     0000b (1 -	disable	keyboard)
-    231	0183  E6 61				     out 61h, al							     ; put  +
-    232				     the value back
-    233
-    234	0185  24 7F				     and al, not 80h							     ; 0111 +
-    235				     1111b (0 -	enable keyboard)
-    236	0187  E6 61				     out 61h, al							     ; put  +
-    237				     the value back
-    238
-    239	0189  B0 20				     mov al, 20h							     ; 20h =+
-    240				     001 = End Of Interrupt
-    241	018B  E6 20				     out 20h, al
-    242
-    243						     SAVE_REG_POP							     ;	    +
-    244				     return saved register values
-1   245	018D  58 5B 59 5A 5E 5F	5D+		     pop ax bx cx dx si	di bp sp ds es ss
-    246	      5C 1F 07 17
-1   247
+    229				     the value back
+    230
+    231	017B  24 7F				     and al, not 80h							     ; 0111 +
+    232				     1111b (0 -	enable keyboard)
+    233	017D  E6 61				     out 61h, al							     ; put  +
+    234				     the value back
+    235
+    236	017F  B0 20				     mov al, 20h							     ; 20h =+
+    237				     001 = End Of Interrupt
+    238	0181  E6 20				     out 20h, al
+    239
+    240	0183  58				     pop ax
+    241
+    242	0184  CF				     iret								     ;	    +
+    243				     returns IP, CS and	flags from the stack
+    244
+    245	0185				     @@not_stop_symbol:
+    246
+    247	0185  58				     pop ax
     248
-    249	0198  CF				     iret								     ;	    +
-    250				     returns IP, CS and	flags from the stack
-    251
-    252	0199				     @@not_stop_symbol:
-    253
-    254						     SAVE_REG_POP
-1   255	0199  58 5B 59 5A 5E 5F	5D+		     pop ax bx cx dx si	di bp sp ds es ss
-    256	      5C 1F 07 17
-1   257
-    258
-    259	01A4  EA				     db	0EAh								     ; long +
-    260				     jump Old09Seg:[Old09Ofs]
-    261	01A5  0000			     Old09Ofs dw 0								     ; give +
-    262				     control to	the system interrupt
-    263	01A7  0000			     Old09Seg dw 0
-    264
-    265	01A9					     endp
-    266
-    267
-    268				     ;;----------------------------------------------------------------------------------------------
-    269				     ------------------------------------------------------------------------------------------------
-    270				     ----------
-    271				     ; Our function replacing interrupt	08h
-    272				     ; Info:
-    273				     ;	     reg_flag -	register update	flag
-    274				     ; Destr:
-    275				     ;	     SP
-    276				     ;;----------------------------------------------------------------------------------------------
-    277				     ------------------------------------------------------------------------------------------------
-    278				     ----------
-    279
-    280
-    281	01A9			     TimerInterruptFunc	     proc
-    282	01A9  80 3E 0028r 01			     cmp reg_flag, 1							     ; push +
-    283				     all registersя
-    284	01AE  75 1C				     jne @@dont_draw_reg
-    285
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 6
+    249	0186  EA				     db	0EAh								     ; long +
+    250				     jump Old09Seg:[Old09Ofs]
+    251	0187  0000			     Old09Ofs dw 0								     ; give +
+    252				     control to	the system interrupt
+    253	0189  0000			     Old09Seg dw 0
+    254
+    255	018B					     endp
+    256
+    257
+    258				     ;;----------------------------------------------------------------------------------------------
+    259				     ------------------------------------------------------------------------------------------------
+    260				     ----------
+    261				     ; Our function replacing interrupt	08h
+    262				     ; Info:
+    263				     ;	     reg_flag -	register update	flag
+    264				     ; Destr:
+    265				     ;	     SP
+    266				     ;;----------------------------------------------------------------------------------------------
+    267				     ------------------------------------------------------------------------------------------------
+    268				     ----------
+    269
+    270
+    271	018B			     TimerInterruptFunc	     proc
+    272	018B  80 3E 0028r 01			     cmp reg_flag, 1							     ; push +
+    273				     all registersя
+    274	0190  75 1C				     jne @@dont_draw_reg
+    275
+    276						     PUSH_ALL_REG							     ; push +
+    277				     all registers
+1   278	0192  0E 16 06 1E 54 55	57+		     push cs ss	es ds sp bp di si dx cx	bx ax
+    279	      56 52 51 53 50
+1   280
+    281
+    282	019E  E8 00A2				     Call DrawRegisterValue						     ;	    +
+    283				     drawing register values
+    284
+    285						     SAVE_REG_POP							     ;	    +
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 6
 resident.asm
 
 
 
-    286						     PUSH_ALL_REG							     ; push +
-    287				     all registers
-1   288	01B0  0E 16 06 1E 54 55	57+		     push cs ss	es ds sp bp di si dx cx	bx ax
-    289	      56 52 51 53 50
-1   290
-    291
-    292	01BC  E8 00A2				     Call DrawRegisterValue						     ;	    +
-    293				     drawing register values
-    294
-    295						     SAVE_REG_POP							     ;	    +
-    296				     return saved register values
-1   297	01BF  58 5B 59 5A 5E 5F	5D+		     pop ax bx cx dx si	di bp sp ds es ss
-    298	      5C 1F 07 17
-1   299
-    300
-    301						     ADD_2 sp
-1   302	01CA  44				     inc sp								     ; 2 *  +
-    303				     inc ... is	faster than add	..., 2
-1   304	01CB  44				     inc sp
-1   305
+    286				     return saved register values
+1   287	01A1  58 5B 59 5A 5E 5F	5D+		     pop ax bx cx dx si	di bp sp ds es ss
+    288	      5C 1F 07 17
+1   289
+    290
+    291						     ADD_2 sp
+1   292	01AC  44				     inc sp								     ; 2 *  +
+    293				     inc ... is	faster than add	..., 2
+1   294	01AD  44				     inc sp
+1   295
+    296
+    297	01AE				     @@dont_draw_reg:
+    298	01AE  EA				     db	0EAh								     ; long +
+    299				     jump Old08Seg:[Old08Ofs]
+    300	01AF  0000			     Old08Ofs dw 0								     ; give +
+    301				     control to	the system interrupt
+    302	01B1  0000			     Old08Seg dw 0
+    303
+    304	01B3					     endp
+    305
     306
-    307	01CC				     @@dont_draw_reg:
-    308	01CC  EA				     db	0EAh								     ; long +
-    309				     jump Old09Seg:[Old09Ofs]
-    310	01CD  0000			     Old08Ofs dw 0								     ; give +
-    311				     control to	the system interrupt
-    312	01CF  0000			     Old08Seg dw 0
-    313
-    314	01D1					     endp
-    315
-    316
-    317				     ;;----------------------------------------------------------------------------------------------
-    318				     ------------------------------------------------------------------------------------------------
-    319				     ----------
-    320				     ; A function that specifies the basic parameters of the frame
-    321				     ; Info:
-    322				     ;	     AH	- stores the color value
-    323				     ;	     BX	- address on frame outline symbols
-    324				     ;	     ES	- video	memory address where we	will draw the frame
-    325				     ;	     DI	- video	memory offset
-    326				     ;	     COLOR - color meaning
-    327				     ; Destr:
-    328				     ;	     AH
-    329				     ;	     BX
-    330				     ;	     ES
-    331				     ;	     DI
-    332				     ;;----------------------------------------------------------------------------------------------
-    333				     ------------------------------------------------------------------------------------------------
-    334				     ----------
-    335
-    336
-    337	01D1			     InitFrame	     proc
-    338						     SAVE_REG_PUSH
-1   339	01D1  16 06 1E 54 55 57	56+		     push ss es	ds sp bp di si dx cx bx	ax
-    340	      52 51 53 50
-1   341
+    307				     ;;----------------------------------------------------------------------------------------------
+    308				     ------------------------------------------------------------------------------------------------
+    309				     ----------
+    310				     ; A function that specifies the basic parameters of the frame
+    311				     ; Info:
+    312				     ;	     AH	- stores the color value
+    313				     ;	     BX	- address on frame outline symbols
+    314				     ;	     ES	- video	memory address where we	will draw the frame
+    315				     ;	     DI	- video	memory offset
+    316				     ;	     COLOR - color meaning
+    317				     ; Destr:
+    318				     ;	     AH
+    319				     ;	     BX
+    320				     ;	     ES
+    321				     ;	     DI
+    322				     ;;----------------------------------------------------------------------------------------------
+    323				     ------------------------------------------------------------------------------------------------
+    324				     ----------
+    325
+    326
+    327	01B3			     InitFrame	     proc
+    328						     SAVE_REG_PUSH
+1   329	01B3  16 06 1E 54 55 57	56+		     push ss es	ds sp bp di si dx cx bx	ax
+    330	      52 51 53 50
+1   331
+    332
+    333	01BE  B4 0C				     mov ah, COLOR							     ; color+
+    334				     value
+    335	01C0  68 B800				     push VIDEO_PTR
+    336	01C3  07				     pop es								     ; video+
+    337				     memory segment
+    338	01C4  BF 0000				     mov di, 0								     ;	    +
+    339				     initial offset
+    340	01C7  BB 0029r				     mov bx, offset CONTROL_STR_ARRAY					     ;	    +
+    341				     address to	a string storing frame outline characters
     342
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 7
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 7
 resident.asm
 
 
 
-    343	01DC  B4 0C				     mov ah, COLOR							     ; color+
-    344				     value
-    345	01DE  68 B800				     push VIDEO_PTR
-    346	01E1  07				     pop es								     ; video+
-    347				     memory segment
-    348	01E2  BF 0000				     mov di, 0								     ;	    +
-    349				     initial offset
-    350	01E5  BB 0029r				     mov bx, offset CONTROL_STR_ARRAY					     ;	    +
-    351				     address to	a string storing frame outline characters
+    343	01CA  E8 000C				     Call DrawFrame							     ; draw +
+    344				     a frame
+    345
+    346						     SAVE_REG_POP
+1   347	01CD  58 5B 59 5A 5E 5F	5D+		     pop ax bx cx dx si	di bp sp ds es ss
+    348	      5C 1F 07 17
+1   349
+    350	01D8  C3			   ret
+    351	01D9				   endp
     352
-    353	01E8  E8 000C				     Call DrawFrame							     ; draw +
-    354				     a frame
-    355
-    356						     SAVE_REG_POP
-1   357	01EB  58 5B 59 5A 5E 5F	5D+		     pop ax bx cx dx si	di bp sp ds es ss
-    358	      5C 1F 07 17
-1   359
-    360	01F6  C3			   ret
-    361	01F7				   endp
-    362
-    363
-    364				     ;;----------------------------------------------------------------------------------------------
-    365				     ------------------------------------------------------------------------------------------------
-    366				     ----------
-    367				     ; Drawing a frame
-    368				     ; Entry:
-    369				     ;	     AH	- color	attr
-    370				     ;	     AL	- symbol
-    371				     ;	     BX	- pointer to string
-    372				     ;	     CX	- number of lines
-    373				     ;	     DI	- offset to mem
-    374				     ; Info:
-    375				     ;	     X0	- the initial x-coordinate of the left corner of the frame
-    376				     ;	     Y0	- the initial y-coordinate of the left corner of the frame
-    377				     ;	     WIDTH_FRAME - frame width
-    378				     ;	     HEIGHT_FRAME - frame height
-    379				     ;	     WIDTH_WINDOW - window width
-    380				     ; Assum:
-    381				     ;	     EX	= 0b800h
-    382				     ; Destr:
-    383				     ;	     BX
-    384				     ;	     CX
-    385				     ;	     DI
-    386				     ;;----------------------------------------------------------------------------------------------
-    387				     ------------------------------------------------------------------------------------------------
-    388				     ----------
-    389
+    353
+    354				     ;;----------------------------------------------------------------------------------------------
+    355				     ------------------------------------------------------------------------------------------------
+    356				     ----------
+    357				     ; Drawing a frame
+    358				     ; Entry:
+    359				     ;	     AH	- color	attr
+    360				     ;	     AL	- symbol
+    361				     ;	     BX	- pointer to string
+    362				     ;	     CX	- number of lines
+    363				     ;	     DI	- offset to mem
+    364				     ; Info:
+    365				     ;	     X0	- the initial x-coordinate of the left corner of the frame
+    366				     ;	     Y0	- the initial y-coordinate of the left corner of the frame
+    367				     ;	     WIDTH_FRAME - frame width
+    368				     ;	     HEIGHT_FRAME - frame height
+    369				     ;	     WIDTH_WINDOW - window width
+    370				     ; Assum:
+    371				     ;	     ES	= 0b800h
+    372				     ; Destr:
+    373				     ;	     BX
+    374				     ;	     CX
+    375				     ;	     DI
+    376				     ;;----------------------------------------------------------------------------------------------
+    377				     ------------------------------------------------------------------------------------------------
+    378				     ----------
+    379
+    380
+    381	01D9			     DrawFrame	     proc
+    382	01D9  E8 0022				     Call DrawLine							     ;	    +
+    383				     Drawing the first line
+    384	01DC  E8 0036				     Call MoveLine
+    385
+    386	01DF  B9 000E				     mov cx, HEIGHT_FRAME
+    387	01E2  83 E9 02				     sub cx, 02d							     ;	    +
+    388				     Number of center lines
+    389	01E5  83 C3 03				     add bx, 03d
     390
-    391	01F7			     DrawFrame	     proc
-    392	01F7  E8 0022				     Call DrawLine							     ;	    +
-    393				     Drawing the first line
-    394	01FA  E8 0036				     Call MoveLine
-    395
-    396	01FD  B9 000E				     mov cx, HEIGHT_FRAME
-    397	0200  83 E9 02				     sub cx, 02d							     ;	    +
-    398				     Number of center lines
-    399	0203  83 C3 03				     add bx, 03d
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 8
+    391	01E8				     @@y1_to_y2:								     ;	    +
+    392				     Drawing the center	lines
+    393	01E8  83 EB 03				     sub bx, 03d
+    394
+    395	01EB  8B E9				     mov bp, cx
+    396	01ED  E8 000E				     Call DrawLine
+    397	01F0  E8 0022				     Call MoveLine
+    398	01F3  8B CD				     mov cx, bp
+    399
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 8
 resident.asm
 
 
 
-    400
-    401	0206				     @@y1_to_y2:								     ;	    +
-    402				     Drawing the center	lines
-    403	0206  83 EB 03				     sub bx, 03d
+    400	01F5  E2 F1				     loop @@y1_to_y2
+    401
+    402	01F7  E8 0004				     Call DrawLine							     ;	    +
+    403				     Drawing the last line
     404
-    405	0209  8B E9				     mov bp, cx
-    406	020B  E8 000E				     Call DrawLine
-    407	020E  E8 0022				     Call MoveLine
-    408	0211  8B CD				     mov cx, bp
-    409
-    410	0213  E2 F1				     loop @@y1_to_y2
+    405	01FA  E8 0023				     Call DrawRegisterLine						     ;	    +
+    406				     Drawing name register
+    407
+    408	01FD  C3				     ret
+    409	01FE					     endp
+    410
     411
-    412	0215  E8 0004				     Call DrawLine							     ;	    +
-    413				     Drawing the last line
-    414
-    415	0218  E8 0023				     Call DrawRegisterLine						     ;	    +
-    416				     Drawing name register
-    417
-    418	021B  C3				     ret
-    419	021C					     endp
-    420
-    421
-    422				     ;;----------------------------------------------------------------------------------------------
-    423				     ------------------------------------------------------------------------------------------------
-    424				     ----------
-    425				     ; Writes a	string to video	mem
-    426				     ; Entry:
-    427				     ;	     AH	- color	attr
-    428				     ;	     BX	- pointer to string
-    429				     ;	     DI	- offset to mem
-    430				     ; Info:
-    431				     ;	     AL	- symbol
-    432				     ;	     WIDTH_FRAME - frame width
-    433				     ; Assum:
-    434				     ;	     EX	= 0b800h
-    435				     ; Destr:
-    436				     ;	     AX
-    437				     ;	     BX
-    438				     ;	     CX
-    439				     ;	     DI
-    440				     ;;----------------------------------------------------------------------------------------------
-    441				     ------------------------------------------------------------------------------------------------
-    442				     ----------
-    443
+    412				     ;;----------------------------------------------------------------------------------------------
+    413				     ------------------------------------------------------------------------------------------------
+    414				     ----------
+    415				     ; Writes a	string to video	mem
+    416				     ; Entry:
+    417				     ;	     AH	- color	attr
+    418				     ;	     BX	- pointer to string
+    419				     ;	     DI	- offset to mem
+    420				     ; Info:
+    421				     ;	     AL	- symbol
+    422				     ;	     WIDTH_FRAME - frame width
+    423				     ; Assum:
+    424				     ;	     ES	= 0b800h
+    425				     ; Destr:
+    426				     ;	     AX
+    427				     ;	     BX
+    428				     ;	     CX
+    429				     ;	     DI
+    430				     ;;----------------------------------------------------------------------------------------------
+    431				     ------------------------------------------------------------------------------------------------
+    432				     ----------
+    433
+    434
+    435	01FE			     DrawLine	     proc
+    436	01FE  2E: 8A 07				     mov al, cs:[bx]
+    437	0201  AB				     Stosw								     ; Print+
+    438				     first symbol
+    439
+    440	0202  43				     inc bx
+    441	0203  2E: 8A 07				     mov al, cs:[bx]
+    442	0206  B9 0009				     mov cx, WIDTH_FRAME
+    443	0209  83 E9 02				     sub cx, 02d
     444
-    445	021C			     DrawLine	     proc
-    446	021C  2E: 8A 07				     mov al, cs:[bx]
-    447	021F  AB				     Stosw								     ; Print+
-    448				     first symbol
-    449
-    450	0220  43				     inc bx
-    451	0221  2E: 8A 07				     mov al, cs:[bx]
-    452	0224  B9 0009				     mov cx, WIDTH_FRAME
-    453	0227  83 E9 02				     sub cx, 02d
+    445	020C  F3> AB				     rep Stosw								     ; Print+
+    446				     second symbol
+    447
+    448	020E  43				     inc bx
+    449	020F  2E: 8A 07				     mov al, cs:[bx]
+    450	0212  AB				     Stosw								     ; Print+
+    451				     third symbol
+    452
+    453	0213  43				     inc bx
     454
-    455	022A  F3> AB				     rep Stosw								     ; Print+
-    456				     second symbol
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 9
+    455	0214  C3				     ret
+    456	0215					     endp
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 9
 resident.asm
 
 
 
     457
-    458	022C  43				     inc bx
-    459	022D  2E: 8A 07				     mov al, cs:[bx]
-    460	0230  AB				     Stosw								     ; Print+
-    461				     third symbol
-    462
-    463	0231  43				     inc bx
-    464
-    465	0232  C3				     ret
-    466	0233					     endp
-    467
-    468
-    469				     ;;----------------------------------------------------------------------------------------------
-    470				     ------------------------------------------------------------------------------------------------
-    471				     ----------
-    472				     ; Calculating the address of the beginning	of a new frame line
-    473				     ; Entry:
-    474				     ;	     AH	- color	attr
-    475				     ;	     AL	- symbol
-    476				     ;	     DI	- offset to mem
-    477				     ; Info:
-    478				     ;	     WIDTH_FRAME - frame width
-    479				     ;	     WIDTH_WINDOW - window width
-    480				     ; Destr:
-    481				     ;	     CX
-    482				     ;	     DI
-    483				     ;;----------------------------------------------------------------------------------------------
-    484				     ------------------------------------------------------------------------------------------------
-    485				     ----------
+    458
+    459				     ;;----------------------------------------------------------------------------------------------
+    460				     ------------------------------------------------------------------------------------------------
+    461				     ----------
+    462				     ; Calculating the address of the beginning	of a new frame line
+    463				     ; Entry:
+    464				     ;	     AH	- color	attr
+    465				     ;	     AL	- symbol
+    466				     ;	     DI	- offset to mem
+    467				     ; Info:
+    468				     ;	     WIDTH_FRAME - frame width
+    469				     ;	     WIDTH_WINDOW - window width
+    470				     ; Destr:
+    471				     ;	     CX
+    472				     ;	     DI
+    473				     ;;----------------------------------------------------------------------------------------------
+    474				     ------------------------------------------------------------------------------------------------
+    475				     ----------
+    476
+    477
+    478	0215			     MoveLine	     proc
+    479	0215  B9 0050				     mov cx, WIDTH_WINDOW
+    480
+    481	0218  83 E9 09				     sub cx, WIDTH_FRAME						     ; We   +
+    482				     count the coordinates of the beginning of a new line
+    483	021B  D1 E1				     shl cx, 1								     ;	    +
+    484				     (WIDTH_WINDOW - WIDTH_FRAME) * 2 +	di
+    485	021D  03 F9				     add di, cx
     486
-    487
-    488	0233			     MoveLine	     proc
-    489	0233  B9 0050				     mov cx, WIDTH_WINDOW
+    487	021F  C3				     ret
+    488	0220					     endp
+    489
     490
-    491	0236  83 E9 09				     sub cx, WIDTH_FRAME						     ; We   +
-    492				     count the coordinates of the beginning of a new line
-    493	0239  D1 E1				     shl cx, 1								     ;	    +
-    494				     (WIDTH_WINDOW - WIDTH_FRAME) * 2 +	di
-    495	023B  03 F9				     add di, cx
-    496
-    497	023D  C3				     ret
-    498	023E					     endp
-    499
-    500
-    501				     ;;----------------------------------------------------------------------------------------------
-    502				     ------------------------------------------------------------------------------------------------
-    503				     ----------
-    504				     ; A function that draws the names of all registers
-    505				     ; Info:
-    506				     ;	     BX	- address to register names written without a space
-    507				     ;	     CX	- number of registers (COUNT_RET)
-    508				     ;	     DI	- video	memory offset
-    509				     ;	     WIDTH_WINDOW - window width
-    510				     ; Assum:
-    511				     ;	     EX	= 0b800h
-    512				     ; Destr:
-    513				     ;	     BX
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 10
+    491				     ;;----------------------------------------------------------------------------------------------
+    492				     ------------------------------------------------------------------------------------------------
+    493				     ----------
+    494				     ; A function that draws the names of all registers
+    495				     ; Info:
+    496				     ;	     BX	- address to register names written without a space
+    497				     ;	     CX	- number of registers (COUNT_RET)
+    498				     ;	     DI	- video	memory offset
+    499				     ;	     WIDTH_WINDOW - window width
+    500				     ; Assum:
+    501				     ;	     ES	= 0b800h
+    502				     ; Destr:
+    503				     ;	     BX
+    504				     ;	     CX
+    505				     ;	     DI
+    506				     ;;----------------------------------------------------------------------------------------------
+    507				     ------------------------------------------------------------------------------------------------
+    508				     ----------
+    509
+    510
+    511	0220			     DrawRegisterLine	     proc
+    512	0220  BB 0000r				     mov bx, offset text_register					     ; write+
+    513				     the address to the	names of all registers written sequentially, without spaces
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 10
 resident.asm
 
 
 
-    514				     ;	     CX
-    515				     ;	     DI
-    516				     ;;----------------------------------------------------------------------------------------------
-    517				     ------------------------------------------------------------------------------------------------
-    518				     ----------
-    519
-    520
-    521	023E			     DrawRegisterLine	     proc
-    522	023E  BB 0000r				     mov bx, offset text_register					     ; write+
-    523				     the address to the	names of all registers written sequentially, without spaces
-    524	0241  BF 00A2				     mov di, (WIDTH_WINDOW + 1)	* 2					     ;	    +
-    525				     initial offset
-    526	0244  B9 000C				     mov cx, COUNT_REG							     ; write+
-    527				     down the number of	registers
+    514	0223  BF 00A2				     mov di, (WIDTH_WINDOW + 1)	* 2					     ;	    +
+    515				     initial offset
+    516	0226  B9 000C				     mov cx, COUNT_REG							     ; write+
+    517				     down the number of	registers
+    518
+    519	0229				     @@y1_to_y2_reg:								     ;	    +
+    520				     display the names of all registers
+    521
+    522	0229  51				     push cx								     ; save +
+    523				     cx
+    524	022A  E8 0008				     Call DrawNameRegister						     ;	    +
+    525				     drawing the name of one register
+    526	022D  59				     pop cx								     ;	    +
+    527				     return cx
     528
-    529	0247				     @@y1_to_y2_reg:								     ;	    +
-    530				     display the names of all registers
+    529	022E  81 C7 009A			     add di, (WIDTH_WINDOW - 3)	* 2					     ; go to+
+    530				     the next line
     531
-    532	0247  51				     push cx								     ; save +
-    533				     cx
-    534	0248  E8 0008				     Call DrawNameRegister						     ;	    +
-    535				     drawing the name of one register
-    536	024B  59				     pop cx								     ;	    +
-    537				     return cx
-    538
-    539	024C  81 C7 009A			     add di, (WIDTH_WINDOW - 3)	* 2					     ; go to+
-    540				     the next line
-    541
-    542	0250  E2 F5				     loop @@y1_to_y2_reg
-    543
-    544	0252  C3				     ret
-    545	0253					     endp
-    546
-    547
-    548				     ;;----------------------------------------------------------------------------------------------
-    549				     ------------------------------------------------------------------------------------------------
-    550				     ----------
-    551				     ; A function that draws the name of a single register
-    552				     ; Entry:
-    553				     ;	     BX	- address to register names written without a space
-    554				     ;	     CS	- code segment
-    555				     ; Info:
-    556				     ;	     AL	- output character
-    557				     ;	     CX	- register name	length
-    558				     ; Assum:
-    559				     ;	     EX	= 0b800h
-    560				     ; Destr:
-    561				     ;	     AL
-    562				     ;	     BX
-    563				     ;	     CX
-    564				     ;;----------------------------------------------------------------------------------------------
-    565				     ------------------------------------------------------------------------------------------------
-    566				     ----------
-    567
-    568
-    569	0253			     DrawNameRegister	     proc
-    570	0253  B9 0002				     mov cx, 2								     ; write+
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 11
+    532	0232  E2 F5				     loop @@y1_to_y2_reg
+    533
+    534	0234  C3				     ret
+    535	0235					     endp
+    536
+    537
+    538				     ;;----------------------------------------------------------------------------------------------
+    539				     ------------------------------------------------------------------------------------------------
+    540				     ----------
+    541				     ; A function that draws the name of a single register
+    542				     ; Entry:
+    543				     ;	     BX	- address to register names written without a space
+    544				     ;	     CS	- code segment
+    545				     ;	     DI	- video	memory offset
+    546				     ; Info:
+    547				     ;	     AL	- output character
+    548				     ;	     CX	- register name	length
+    549				     ; Assum:
+    550				     ;	     ES	= 0b800h
+    551				     ; Destr:
+    552				     ;	     AL
+    553				     ;	     BX
+    554				     ;	     CX
+    555				     ;;----------------------------------------------------------------------------------------------
+    556				     ------------------------------------------------------------------------------------------------
+    557				     ----------
+    558
+    559
+    560	0235			     DrawNameRegister	     proc
+    561	0235  B9 0002				     mov cx, 2								     ; write+
+    562				     down the length of	the register name
+    563
+    564	0238				     @@x1_to_x2_reg:								     ;	    +
+    565				     display the register name character by character
+    566
+    567	0238  2E: 8A 07				     mov al, cs:[bx]
+    568	023B  AB				     Stosw
+    569	023C  43				     inc bx
+    570
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 11
 resident.asm
 
 
 
-    571				     down the length of	the register name
+    571	023D  E2 F9				     loop @@x1_to_x2_reg
     572
-    573	0256				     @@x1_to_x2_reg:								     ;	    +
-    574				     display the register name character by character
-    575
-    576	0256  2E: 8A 07				     mov al, cs:[bx]
-    577	0259  AB				     Stosw
-    578	025A  43				     inc bx
+    573	023F  B0 3D				     mov al, '='							     ;	    +
+    574				     output equal to
+    575	0241  AB				     Stosw
+    576
+    577	0242  C3				     ret
+    578	0243					     endp
     579
-    580	025B  E2 F9				     loop @@x1_to_x2_reg
-    581
-    582	025D  B0 3D				     mov al, '='							     ;	    +
-    583				     output equal to
-    584	025F  AB				     Stosw
-    585
-    586	0260  C3				     ret
-    587	0261					     endp
-    588
-    589
-    590				     ;;----------------------------------------------------------------------------------------------
-    591				     ------------------------------------------------------------------------------------------------
-    592				     ----------
-    593				     ; Function	that prints the	values ​​of	all registers
-    594				     ; Info:
-    595				     ;	     CX	- number of registers (COUNT_RET)
-    596				     ;	     BP	- address to register values ​​on the stack
-    597				     ;	     DI	- video	memory offset
-    598				     ;	     ES	- video	memory segment
-    599				     ; Destr:
-    600				     ;	     CX
-    601				     ;	     BP
-    602				     ;	     DI
-    603				     ;	     ES
-    604				     ;;----------------------------------------------------------------------------------------------
-    605				     ------------------------------------------------------------------------------------------------
-    606				     ----------
-    607
-    608
-    609	0261			     DrawRegisterValue	     proc
-    610	0261  68 B800				     push VIDEO_PTR							     ; write+
-    611				     address on	video memory
-    612	0264  07				     pop es
-    613
-    614	0265  BF 00A8				     mov di, (WIDTH_WINDOW + 4)	* 2					     ; write+
-    615				     down the initial offset
-    616	0268  B9 000C				     mov cx, COUNT_REG							     ; save +
-    617				     the number	of registers
-    618
-    619	026B  54				     push sp
-    620	026C  5D				     pop bp
-    621	026D  83 C5 02				     add bp, 2								     ; write+
-    622				     the address pointing to the register values ​​on the stack
-    623
-    624	0270				     @@y1_to_y2_value_reg:							     ;	    +
-    625				     display the value of all registers
-    626
-    627	0270  8B 56 00				     mov dx, [bp]							     ; get  +
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 12
+    580
+    581				     ;;----------------------------------------------------------------------------------------------
+    582				     ------------------------------------------------------------------------------------------------
+    583				     ----------
+    584				     ; Function	that prints the	values ​​of	all registers
+    585				     ; Info:
+    586				     ;	     CX	- number of registers (COUNT_RET)
+    587				     ;	     BP	- address to register values ​​on the stack
+    588				     ;	     DI	- video	memory offset
+    589				     ;	     ES	- video	memory segment
+    590				     ; Destr:
+    591				     ;	     CX
+    592				     ;	     BP
+    593				     ;	     DI
+    594				     ;	     ES
+    595				     ;;----------------------------------------------------------------------------------------------
+    596				     ------------------------------------------------------------------------------------------------
+    597				     ----------
+    598
+    599
+    600	0243			     DrawRegisterValue	     proc
+    601	0243  68 B800				     push VIDEO_PTR							     ; write+
+    602				     address on	video memory
+    603	0246  07				     pop es
+    604
+    605	0247  BF 00A8				     mov di, (WIDTH_WINDOW + 4)	* 2					     ; write+
+    606				     down the initial offset
+    607	024A  B9 000C				     mov cx, COUNT_REG							     ; save +
+    608				     the number	of registers
+    609
+    610	024D  54				     push sp
+    611	024E  5D				     pop bp
+    612	024F  83 C5 02				     add bp, 2								     ; write+
+    613				     the address pointing to the register values ​​on the stack
+    614
+    615	0252				     @@y1_to_y2_value_reg:							     ;	    +
+    616				     display the value of all registers
+    617
+    618	0252  8B 56 00				     mov dx, [bp]							     ; get  +
+    619				     the register value	from the stack
+    620
+    621	0255  51				     push cx								     ; save +
+    622				     cx
+    623	0256  E8 000A				     Call DrawRegNumber							     ; call +
+    624				     a function	that prints the	value of one register
+    625	0259  59				     pop cx								     ;	    +
+    626				     return cx
+    627
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 12
 resident.asm
 
 
 
-    628				     the register value	from the stack
-    629
-    630	0273  51				     push cx								     ; save +
-    631				     cx
-    632	0274  E8 000A				     Call DrawRegNumber							     ; call +
-    633				     a function	that prints the	value of one register
-    634	0277  59				     pop cx								     ;	    +
-    635				     return cx
+    628	025A  81 C7 0098			     add di, (WIDTH_WINDOW - 4)	* 2					     ; go to+
+    629				     new line
+    630
+    631						     ADD_2 bp
+1   632	025E  45				     inc bp								     ; 2 *  +
+    633				     inc ... is	faster than add	..., 2
+1   634	025F  45				     inc bp
+1   635
     636
-    637	0278  81 C7 0098			     add di, (WIDTH_WINDOW - 4)	* 2					     ; go to+
-    638				     new line
-    639
-    640						     ADD_2 bp
-1   641	027C  45				     inc bp								     ; 2 *  +
-    642				     inc ... is	faster than add	..., 2
-1   643	027D  45				     inc bp
-1   644
-    645
-    646	027E  E2 F0				     loop @@y1_to_y2_value_reg
-    647
-    648	0280  C3				     ret
-    649	0281					     endp
-    650
-    651
-    652				     ;;----------------------------------------------------------------------------------------------
-    653				     ------------------------------------------------------------------------------------------------
-    654				     ----------
-    655				     ; Function	that prints the	value of one register
-    656				     ; Entry:
-    657				     ;	     DX	- stores the value of the output register
-    658				     ; Info:
-    659				     ;	     AH	- stores the color value
-    660				     ; Destr:
-    661				     ;	     AH
-    662				     ;	     CX
-    663				     ;;----------------------------------------------------------------------------------------------
-    664				     ------------------------------------------------------------------------------------------------
-    665				     ----------
-    666
+    637	0260  E2 F0				     loop @@y1_to_y2_value_reg
+    638
+    639	0262  C3				     ret
+    640	0263					     endp
+    641
+    642
+    643				     ;;----------------------------------------------------------------------------------------------
+    644				     ------------------------------------------------------------------------------------------------
+    645				     ----------
+    646				     ; Function	that prints the	value of one register
+    647				     ; Entry:
+    648				     ;	     DX	- stores the value of the output register
+    649				     ;	     DI	- video	memory offset
+    650				     ; Info:
+    651				     ;	     AH	- stores the color value
+    652				     ; Assum:
+    653				     ;	     ES	= 0b800h
+    654				     ; Destr:
+    655				     ;	     AH
+    656				     ;	     CX
+    657				     ;;----------------------------------------------------------------------------------------------
+    658				     ------------------------------------------------------------------------------------------------
+    659				     ----------
+    660
+    661
+    662	0263			     DrawRegNumber   proc
+    663	0263  B9 0000				     mov cx, 0								     ; reset+
+    664				     the register
+    665	0266  B4 0C				     mov ah, COLOR							     ; color+
+    666				     value
     667
-    668	0281			     DrawRegNumber   proc
-    669	0281  B9 0000				     mov cx, 0								     ; reset+
-    670				     the register
-    671	0284  B4 0C				     mov ah, COLOR							     ; color+
-    672				     value
-    673
-    674	0286  8A CE				     mov cl, dh								     ; save +
-    675				     dh
-    676
-    677	0288  C0 E9 04				     shr cl, 4								     ; get  +
-    678				     the most significant digit	of register dh
-    679	028B  E8 0019				     Call DrawHexNumber
-    680
-    681	028E  8A CE				     mov cl, dh								     ;	    +
-    682				     update the	value
-    683
-    684	0290  80 E1 0F				     and cl, 0Fh							     ; get  +
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 13
+    668	0268  8A CE				     mov cl, dh								     ; save +
+    669				     dh
+    670
+    671	026A  C0 E9 04				     shr cl, 4								     ; get  +
+    672				     the most significant digit	of register dh
+    673	026D  E8 0019				     Call DrawHexNumber
+    674
+    675	0270  8A CE				     mov cl, dh								     ;	    +
+    676				     update the	value
+    677
+    678	0272  80 E1 0F				     and cl, 0Fh							     ; get  +
+    679				     the least significant bit of register dh
+    680	0275  E8 0011				     Call DrawHexNumber
+    681
+    682	0278  8A CA				     mov cl, dl								     ; save +
+    683				     dl
+    684
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 13
 resident.asm
 
 
 
-    685				     the least significant bit of register dh
-    686	0293  E8 0011				     Call DrawHexNumber
-    687
-    688	0296  8A CA				     mov cl, dl								     ; save +
-    689				     dl
-    690
-    691	0298  C0 E9 04				     shr cl, 4								     ; get  +
-    692				     the most significant digit	of register dl
-    693	029B  E8 0009				     Call DrawHexNumber
-    694
-    695	029E  8A CA				     mov cl, dl								     ;	    +
-    696				     update the	value
-    697
-    698	02A0  80 E1 0F				     and cl, 0Fh							     ; get  +
-    699				     the least significant bit of register dl
-    700	02A3  E8 0001				     Call DrawHexNumber
-    701
-    702	02A6  C3				     ret
-    703	02A7					     endp
-    704
-    705
-    706				     ;;----------------------------------------------------------------------------------------------
-    707				     ------------------------------------------------------------------------------------------------
-    708				     ----------
-    709				     ; Function	that prints a hexadecimal number symbol
-    710				     ; Entry:
-    711				     ;	     CX	- output number
-    712				     ; Info:
-    713				     ;	     AL	- output character
-    714				     ;	     BX	- address per line with	text representations of	hexadecimal symbols
-    715				     ; Destr:
-    716				     ;	     BX
-    717				     ;;----------------------------------------------------------------------------------------------
-    718				     ------------------------------------------------------------------------------------------------
-    719				     ----------
-    720
-    721
-    722	02A7			     DrawHexNumber   proc
-    723	02A7  BB 0018r				     mov bx, offset hex_alphabet					     ;	    +
-    724				     address per line with text	representations	of hexadecimal symbols
-    725
-    726	02AA  03 D9				     add bx, cx								     ; get  +
-    727				     the text representation of	the output character
-    728	02AC  2E: 8A 07				     mov al, cs:[bx]
+    685	027A  C0 E9 04				     shr cl, 4								     ; get  +
+    686				     the most significant digit	of register dl
+    687	027D  E8 0009				     Call DrawHexNumber
+    688
+    689	0280  8A CA				     mov cl, dl								     ;	    +
+    690				     update the	value
+    691
+    692	0282  80 E1 0F				     and cl, 0Fh							     ; get  +
+    693				     the least significant bit of register dl
+    694	0285  E8 0001				     Call DrawHexNumber
+    695
+    696	0288  C3				     ret
+    697	0289					     endp
+    698
+    699
+    700				     ;;----------------------------------------------------------------------------------------------
+    701				     ------------------------------------------------------------------------------------------------
+    702				     ----------
+    703				     ; Function	that prints a hexadecimal number symbol
+    704				     ; Entry:
+    705				     ;	     CX	- output number
+    706				     ;	     DI	- video	memory offset
+    707				     ; Info:
+    708				     ;	     AL	- output character
+    709				     ;	     BX	- address per line with	text representations of	hexadecimal symbols
+    710				     ; Assum:
+    711				     ;	     ES	= 0b800h
+    712				     ; Destr:
+    713				     ;	     BX
+    714				     ;;----------------------------------------------------------------------------------------------
+    715				     ------------------------------------------------------------------------------------------------
+    716				     ----------
+    717
+    718
+    719	0289			     DrawHexNumber   proc
+    720	0289  BB 0018r				     mov bx, offset hex_alphabet					     ;	    +
+    721				     address per line with text	representations	of hexadecimal symbols
+    722
+    723	028C  03 D9				     add bx, cx								     ; get  +
+    724				     the text representation of	the output character
+    725	028E  2E: 8A 07				     mov al, cs:[bx]
+    726
+    727	0291  AB				     Stosw								     ;	    +
+    728				     display the symbol
     729
-    730	02AF  AB				     Stosw								     ;	    +
-    731				     display the symbol
+    730	0292  C3				     ret
+    731	0293					     endp
     732
-    733	02B0  C3				     ret
-    734	02B1					     endp
+    733
+    734	0293			     .data
     735
     736
-    737	02B1			     .data
-    738
-    739
-    740	0000  61 78 62 78 63 78	64+  text_register db "axbxcxdxsidibpspdsessscs"					     ;	    +
-    741	      78 73 69 64 69 62	70+  register names written sequentially, without spaces
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 14
+    737	0000  61 78 62 78 63 78	64+  text_register db "axbxcxdxsidibpspdsessscs"					     ;	    +
+    738	      78 73 69 64 69 62	70+  register names written sequentially, without spaces
+    739	      73 70 64 73 65 73	73+
+    740	      73 63 73
+    741
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 14
 resident.asm
 
 
 
-    742	      73 70 64 73 65 73	73+
-    743	      73 63 73
-    744
-    745	0018  30 31 32 33 34 35	36+  hex_alphabet db "0123456789ABCDEF"							     ; text +
-    746	      37 38 39 41 42 43	44+  representations of	hexadecimal symbols
-    747	      45 46
+    742	0018  30 31 32 33 34 35	36+  hex_alphabet db "0123456789ABCDEF"							     ; text +
+    743	      37 38 39 41 42 43	44+  representations of	hexadecimal symbols
+    744	      45 46
+    745
+    746	0028  00		     reg_flag db 0									     ; flag +
+    747				     responsible for updating registers	(1 - enable, 0 - disable)
     748
-    749	0028  00		     reg_flag db 0									     ; flag +
-    750				     responsible for updating registers	(1 - enable, 0 - disable)
+    749	0029  03 03 03 03 20 03	03+  CONTROL_STR_ARRAY db "	"
+    750	      03 03
     751
-    752	0029  03 03 03 03 20 03	03+  CONTROL_STR_ARRAY db "	"
-    753	      03 03
+    752
+    753	0032			     EndOfProgramm:
     754
     755
-    756	0032			     EndOfProgramm:
-    757
-    758
-    759				     end     Start
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 15
+    756				     end     Start
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 15
 Symbol Table
 
 
@@ -837,17 +834,17 @@ Symbol Name			  Type	 Value
 
 ??DATE				  Text	 "02/26/24"
 ??FILENAME			  Text	 "resident"
-??TIME				  Text	 "22:26:29"
+??TIME				  Text	 "23:04:08"
 ??VERSION			  Number 040A
 @32BIT				  Text	 0
-@@DONT_DRAW_REG			  Near	 DGROUP:01CC
-@@NOT_START_SYMBOL		  Near	 DGROUP:0175
-@@NOT_STOP_SYMBOL		  Near	 DGROUP:0199
-@@STATUS_KEYBOARD		  Near	 DGROUP:017F
-@@X1_TO_X2_REG			  Near	 DGROUP:0256
-@@Y1_TO_Y2			  Near	 DGROUP:0206
-@@Y1_TO_Y2_REG			  Near	 DGROUP:0247
-@@Y1_TO_Y2_VALUE_REG		  Near	 DGROUP:0270
+@@DONT_DRAW_REG			  Near	 DGROUP:01AE
+@@NOT_START_SYMBOL		  Near	 DGROUP:016B
+@@NOT_STOP_SYMBOL		  Near	 DGROUP:0185
+@@STATUS_KEYBOARD		  Near	 DGROUP:0175
+@@X1_TO_X2_REG			  Near	 DGROUP:0238
+@@Y1_TO_Y2			  Near	 DGROUP:01E8
+@@Y1_TO_Y2_REG			  Near	 DGROUP:0229
+@@Y1_TO_Y2_VALUE_REG		  Near	 DGROUP:0252
 @CODE				  Text	 DGROUP
 @CODESIZE			  Text	 0
 @CPU				  Text	 0707H
@@ -862,34 +859,34 @@ Symbol Name			  Type	 Value
 COLOR				  Number 000C
 CONTROL_STR_ARRAY		  Byte	 DGROUP:0029
 COUNT_REG			  Number 000C
-DRAWFRAME			  Near	 DGROUP:01F7
-DRAWHEXNUMBER			  Near	 DGROUP:02A7
-DRAWLINE			  Near	 DGROUP:021C
-DRAWNAMEREGISTER		  Near	 DGROUP:0253
-DRAWREGISTERLINE		  Near	 DGROUP:023E
-DRAWREGISTERVALUE		  Near	 DGROUP:0261
-DRAWREGNUMBER			  Near	 DGROUP:0281
+DRAWFRAME			  Near	 DGROUP:01D9
+DRAWHEXNUMBER			  Near	 DGROUP:0289
+DRAWLINE			  Near	 DGROUP:01FE
+DRAWNAMEREGISTER		  Near	 DGROUP:0235
+DRAWREGISTERLINE		  Near	 DGROUP:0220
+DRAWREGISTERVALUE		  Near	 DGROUP:0243
+DRAWREGNUMBER			  Near	 DGROUP:0263
 ENDOFPROGRAMM			  Near	 DGROUP:0032
 FRAMEINTERRUPTFUNC		  Near	 DGROUP:0158
 HEIGHT_FRAME			  Number 000E
 HEX_ALPHABET			  Byte	 DGROUP:0018
-INITFRAME			  Near	 DGROUP:01D1
-INITINTERRUPT			  Near	 DGROUP:0107
+INITFRAME			  Near	 DGROUP:01B3
+INITINTERRUPT			  Near	 DGROUP:0113
 MAIN				  Near	 DGROUP:0103
-MOVELINE			  Near	 DGROUP:0233
-OLD08OFS			  Word	 DGROUP:01CD
-OLD08SEG			  Word	 DGROUP:01CF
-OLD09OFS			  Word	 DGROUP:01A5
-OLD09SEG			  Word	 DGROUP:01A7
+MOVELINE			  Near	 DGROUP:0215
+OLD08OFS			  Word	 DGROUP:01AF
+OLD08SEG			  Word	 DGROUP:01B1
+OLD09OFS			  Word	 DGROUP:0187
+OLD09SEG			  Word	 DGROUP:0189
 REG_FLAG			  Byte	 DGROUP:0028
 START				  Near	 DGROUP:0100
 START_SYMBOL			  Number 0009
 STOP_SYMBOL			  Number 000A
 TEXT_REGISTER			  Byte	 DGROUP:0000
-TIMERINTERRUPTFUNC		  Near	 DGROUP:01A9
+TIMERINTERRUPTFUNC		  Near	 DGROUP:018B
 VIDEO_PTR			  Number B800
 WIDTH_FRAME			  Number 0009
-Turbo Assembler	 Version 4.1	    02/26/24 22:26:29	    Page 16
+Turbo Assembler	 Version 4.1	    02/26/24 23:04:08	    Page 16
 Symbol Table
 
 
@@ -909,5 +906,5 @@ Groups & Segments		  Bit Size Align  Combine Class
 
 DGROUP				  Group
   _DATA				  16  0032 Word	  Public  DATA
-  _TEXT				  16  02B1 Word	  Public  CODE
+  _TEXT				  16  0293 Word	  Public  CODE
 
