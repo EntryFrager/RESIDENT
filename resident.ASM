@@ -52,7 +52,7 @@ Start:
 
 
 Main	proc
-		Call InitInterrupt							; call a function that replaces the interrupt
+		Call InitMyInterrupt							; call a function that replaces the interrupt
 
 ;;-----------------Terminate and stay resident--------------------------
 
@@ -82,7 +82,7 @@ Main	proc
 ;;--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-InitInterrupt	proc
+InitMyInterrupt	proc
 
 ;;-----------------------------09-Interrupt-----------------------------
 
