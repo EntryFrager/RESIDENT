@@ -17,7 +17,7 @@ SAVE_REG_POP	macro									; macro that returns registers to their stored values
 
 
 PUSH_ALL_REG	macro									; macro that pushes the values of all registers onto the stack
-		push cs ss es ds sp bp di si dx cx bx ax
+		push ss es ds sp bp di si dx cx bx ax
 
 		endm 
 
@@ -215,7 +215,7 @@ TimerInterruptFunc	proc
 
 		SAVE_REG_POP								; return saved register values
 
-		ADD_2 sp
+		;ADD_2 sp
 
 	@@dont_draw_reg:
 		db 0EAh									; long jump Old08Seg:[Old08Ofs]
@@ -480,6 +480,13 @@ DrawRegisterValue	proc
 		add di, (WIDTH_WINDOW - 4) * 2						; go to new line
 
 		ADD_2 bp
+
+		cmp cx, 2								; jump to the value of the code segment register
+		jne @@reg_not_cs
+
+		ADD_2 bp
+
+	@@reg_not_cs:
 
 		loop @@y1_to_y2_value_reg
 
